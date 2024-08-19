@@ -17,8 +17,8 @@ spawn_points = world.get_map().get_spawn_points()
 blueprint_library = world.get_blueprint_library()
 vehicle_bp = blueprint_library.filter('model3')[0]
 start_point = spawn_points[0]
+
 # Spawn the vehicle in a specific location with more curves
-#spawn_point = carla.Transform(carla.Location(x=0, y=0, z=0), carla.Rotation(roll=0, pitch=30, yaw=180))
 vehicle = world.spawn_actor(vehicle_bp, start_point)
 
 # Setting autopilot for the vehicle
@@ -57,8 +57,18 @@ camera = world.spawn_actor(camera_bp, camera_transform, attach_to=vehicle)
 # Listen to the camera sensor
 camera.listen(image_callback)
 
+# Add a spectator camera to follow the vehicle
+spectator = world.get_spectator()
+def update_spectator():
+    transform = vehicle.get_transform()
+    spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50, x=-5), carla.Rotation(pitch=-90)))
+
 try:
-    time.sleep(120)  # Collect data for 10 seconds
+    start_time = time.time()
+    while time.time() - start_time < 120:  # Collect data for 120 seconds
+        world.wait_for_tick()
+        update_spectator()
+
 finally:
     # Cleanup
     camera.stop()
